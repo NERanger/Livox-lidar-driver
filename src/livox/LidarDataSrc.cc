@@ -40,7 +40,7 @@ bool LidarDataSrc::Initialize(const std::vector<std::string> &broadcast_codes){
     
 }
 
-void LidarDataSrc::OnDeviceBroadcast(const BroadcastDeviceInfo *info){
+void LidarDataSrc::OnDeviceBroadcast(const BroadcastDeviceInfo * const info){
     if(info == nullptr){
         return;
     }

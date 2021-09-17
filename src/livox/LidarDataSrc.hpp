@@ -60,7 +60,7 @@ private:
     bool QueryWhiteList(const char* bd_code) const;
 
     static void GetLidarDataCb(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data);
-    static void OnDeviceBroadcast(const BroadcastDeviceInfo *info);
+    static void OnDeviceBroadcast(const BroadcastDeviceInfo * const info);
 
     std::vector<std::string> white_list_;
     std::array<LidarDevice, kMaxLidarCount> lidars_;
