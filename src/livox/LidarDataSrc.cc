@@ -38,7 +38,55 @@ bool LidarDataSrc::Initialize(const std::vector<std::string> &broadcast_codes){
 
     SetBroadcastCallback(OnDeviceBroadcast);
     SetDeviceStateUpdateCallback(OnDeviceChange);
-    
+
+    // Add white list
+    for(auto bc_code : broadcast_codes){
+        AddBroadcastCodeToWhitelist(bc_code);
+    }
+
+    if(!white_list_.empty()){
+        auto_connect_ = false;
+        cout << "Auto connect disabled, white list:" << endl;
+        for(auto bc_code : white_list_){
+            cout << bc_code << endl;
+        }
+    }else{
+        auto_connect_ = true;
+        cout << "White list empty, enable auto connect" << endl;
+    }
+
+    // Start livox sdk to receive lidar data
+    if(!Start()){
+        Uninit();
+        cout << "Fail to init Livox-SDK" << endl;
+        return false;
+    }
+
+    is_initialized_ = true;
+    cout << "Livox-SDK init success" << endl;
+
+    return true;
+}
+
+bool LidarDataSrc::AddBroadcastCodeToWhitelist(const std::string &bc_code){
+    if(bc_code.empty() || bc_code.length() > kBroadcastCodeSize){
+        cerr << "Invalid broadcast code" << endl;
+        return false;
+    }
+
+    if(white_list_.size() > kMaxLidarCount){
+        cerr << "White list exceed max size: " << kMaxLidarCount << endl;
+        return false;
+    }
+
+    if(QueryWhiteList(bc_code)){
+        cerr << "Broadcast code already exist" << endl;
+        return false;
+    }
+
+    white_list_.emplace_back(bc_code);
+
+    return true;
 }
 
 void LidarDataSrc::GetLidarDataCb(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data){
@@ -66,7 +114,7 @@ void LidarDataSrc::OnDeviceBroadcast(const BroadcastDeviceInfo * const info){
         return;
     }
 
-    if(instance_ptr_->IsAutoConnet()){
+    if(instance_ptr_->auto_connect_){
         cout << "In auto connect mode, connecting to " 
              << string(info->broadcast_code) << endl;
     }else{
@@ -294,14 +342,28 @@ void LidarDataSrc::DeviceInformationCb(livox_status status, uint8_t handle,
     }
 }
 
-bool LidarDataSrc::QueryWhiteList(const char* bd_code) const{
-    if(!bd_code){
+bool LidarDataSrc::QueryWhiteList(const char* bc_code) const{
+    if(!bc_code){
         return false;
     }
 
-    string bd_code_str(bd_code);
+    string bc_code_str(bc_code);
     for(auto code : white_list_){
-        if(bd_code_str == code){
+        if(bc_code_str == code){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool LidarDataSrc::QueryWhiteList(const std::string &bc_code) const{
+    if(bc_code.empty()){
+        return false;
+    }
+
+    for(auto code : white_list_){
+        if(bc_code == code){
             return true;
         }
     }

@@ -61,9 +61,11 @@ private:
 
     LidarDataSrc() = default;
 
-    inline bool IsAutoConnet() const{return auto_connect_;}
+    // inline bool IsAutoConnet() const{return auto_connect_;}
 
-    bool QueryWhiteList(const char* bd_code) const;
+    bool AddBroadcastCodeToWhitelist(const std::string &bc_code);
+    bool QueryWhiteList(const char* bc_code) const;
+    bool QueryWhiteList(const std::string &bc_code) const;
 
     static void GetLidarDataCb(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data);
     static void DeviceInformationCb(livox_status status, uint8_t handle, DeviceInformationResponse *ack, void *clent_data);
