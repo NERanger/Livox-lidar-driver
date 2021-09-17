@@ -53,6 +53,8 @@ public:
 
     void operator=(const LidarDataSrc &) = delete;
 
+    ~LidarDataSrc();
+
     bool Initialize(const std::vector<std::string> &broadcast_codes);
 
     static LidarDataSrc& GetInstance();
@@ -60,7 +62,6 @@ public:
 private:
 
     LidarDataSrc() = default;
-    ~LidarDataSrc();
 
     // inline bool IsAutoConnet() const{return auto_connect_;}
 

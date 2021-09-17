@@ -170,7 +170,7 @@ void LidarDataSrc::OnDeviceStateChange(const DeviceInfo *info, DeviceEvent type)
         cout << "[WARNING] LiDAR sn [" << string(info->broadcast_code) 
                                        << "] connected" << endl;
     }else if(type == kEventDisconnect){
-        lidar.con_state == kConnectStateOff;
+        lidar.con_state = kConnectStateOff;
         cout << "[WARNING] LiDAR sn [" << string(info->broadcast_code)
                                        << "] disconnected" << endl;
     }else if(type == kEventStateChange){
