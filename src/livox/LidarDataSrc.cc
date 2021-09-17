@@ -9,6 +9,9 @@ using std::string;
 
 using livox::LidarDataSrc;
 
+std::unique_ptr<LidarDataSrc> LidarDataSrc::instance_ptr_;
+std::mutex LidarDataSrc::mutex_;
+
 LidarDataSrc::~LidarDataSrc(){
     if(is_initialized_){
         Uninit();
