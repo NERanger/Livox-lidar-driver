@@ -23,6 +23,13 @@ enum CoordinateType{
   kCoordinateSpherical
 };
 
+enum LidarConfigCodeBit{
+    kConfigFan = 1,
+    kConfigReturnMode = 2,
+    kConfigCoordinate = 4,
+    kConfigImuRate = 8
+};
+
 struct UserConfig{
     bool enable_fan;
     uint32_t return_mode;
@@ -55,15 +62,24 @@ private:
     LidarDataSrc() = default;
 
     inline bool IsAutoConnet() const{return auto_connect_;}
-    // inline LidarDevice& GetLidarRef(size_t i){return lidars_[i];}
 
     bool QueryWhiteList(const char* bd_code) const;
 
     static void GetLidarDataCb(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data);
+    static void DeviceInformationCb(livox_status status, uint8_t handle, DeviceInformationResponse *ack, void *clent_data);
+    static void LidarErrorStatusCb(livox_status status, uint8_t handle, ErrorMessage *message);
+    static void StartSampleCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);
+
     static void OnDeviceBroadcast(const BroadcastDeviceInfo * const info);
+    static void OnDeviceChange(const DeviceInfo *info, DeviceEvent type);
+
+    static void SetCoordinateCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);
+    static void SetPointCloudReturnModeCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);
+    static void SetImuRatePushFrequencyCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);
 
     std::vector<std::string> white_list_;
     std::array<LidarDevice, kMaxLidarCount> lidars_;
+    std::array<uint32_t, kMaxLidarCount> data_recv_cnt_;
 
     bool auto_connect_ = false;
 
