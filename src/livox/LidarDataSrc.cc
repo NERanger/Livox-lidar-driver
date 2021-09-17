@@ -16,9 +16,9 @@ LidarDataSrc::~LidarDataSrc(){
     if(is_initialized_){
         Uninit();
         cout << "Livox-SDK uninit success" << endl;
+    }else{
+        cerr << "Deconstructor called before Livox-SDK init" << endl;
     }
-
-    cerr << "Deconstructor called before Livox-SDK init" << endl;
 }
 
 LidarDataSrc& LidarDataSrc::GetInstance(){
