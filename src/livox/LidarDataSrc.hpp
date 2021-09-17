@@ -60,6 +60,7 @@ public:
 private:
 
     LidarDataSrc() = default;
+    ~LidarDataSrc();
 
     // inline bool IsAutoConnet() const{return auto_connect_;}
 
@@ -73,7 +74,7 @@ private:
     static void StartSampleCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);
 
     static void OnDeviceBroadcast(const BroadcastDeviceInfo * const info);
-    static void OnDeviceChange(const DeviceInfo *info, DeviceEvent type);
+    static void OnDeviceStateChange(const DeviceInfo *info, DeviceEvent type);
 
     static void SetCoordinateCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);
     static void SetPointCloudReturnModeCb(livox_status status, uint8_t handle, uint8_t response, void *clent_data);

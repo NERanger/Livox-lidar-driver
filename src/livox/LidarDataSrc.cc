@@ -9,6 +9,15 @@ using std::string;
 
 using livox::LidarDataSrc;
 
+LidarDataSrc::~LidarDataSrc(){
+    if(is_initialized_){
+        Uninit();
+        cout << "Livox-SDK uninit success" << endl;
+    }
+
+    cerr << "Deconstructor called before Livox-SDK init" << endl;
+}
+
 LidarDataSrc& LidarDataSrc::GetInstance(){
     std::lock_guard<std::mutex> lk(mutex_);
 
@@ -37,7 +46,7 @@ bool LidarDataSrc::Initialize(const std::vector<std::string> &broadcast_codes){
          << sdk_ver.major << "." << sdk_ver.minor << "." << sdk_ver.patch << endl;
 
     SetBroadcastCallback(OnDeviceBroadcast);
-    SetDeviceStateUpdateCallback(OnDeviceChange);
+    SetDeviceStateUpdateCallback(OnDeviceStateChange);
 
     // Add white list
     for(auto bc_code : broadcast_codes){
@@ -141,7 +150,7 @@ void LidarDataSrc::OnDeviceBroadcast(const BroadcastDeviceInfo * const info){
     }
 }
 
-void LidarDataSrc::OnDeviceChange(const DeviceInfo *info, DeviceEvent type){
+void LidarDataSrc::OnDeviceStateChange(const DeviceInfo *info, DeviceEvent type){
     if(info == nullptr){
         return;
     }
