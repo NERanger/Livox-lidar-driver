@@ -53,6 +53,11 @@ LidarDataSrc& LidarDataSrc::GetInstance(){
     return *instance_ptr_;
 }
 
+bool LidarDataSrc::Initialize(){
+    std::vector<std::string> empty_str_vec;
+    return Initialize(empty_str_vec);
+}
+
 bool LidarDataSrc::Initialize(const std::vector<std::string> &broadcast_codes){
     if(is_initialized_){
         cerr << "LiDAR data source already initialized" << endl;

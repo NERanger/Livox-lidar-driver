@@ -7,11 +7,8 @@
 #include "livox/LidarDataSrc.hpp"
 
 int main(int argc, char const *argv[]){
-
-    std::vector<std::string> white_list;
-
     livox::LidarDataSrc& data_src = livox::LidarDataSrc::GetInstance();
-    data_src.Initialize(white_list);
+    data_src.Initialize();
 
     while(true){
         std::vector<livox::PointXYZR> out = data_src.GetPtdataXYZR();

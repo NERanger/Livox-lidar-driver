@@ -11,8 +11,6 @@
 #include <livox_sdk.h>
 #include <livox_def.h>
 
-// #include "livox/Common.hpp"
-
 namespace livox{
 
 const uint32_t KEthPacketMaxLength = 1500;
@@ -75,6 +73,7 @@ public:
     ~LidarDataSrc();
 
     bool Initialize(const std::vector<std::string> &broadcast_codes);
+    bool Initialize();
 
     std::vector<PointXYZR> GetPtdataXYZR();
 
