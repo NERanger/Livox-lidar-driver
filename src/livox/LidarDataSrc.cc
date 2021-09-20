@@ -15,6 +15,7 @@ std::unique_ptr<LidarDataSrc> LidarDataSrc::instance_ptr_;
 std::mutex LidarDataSrc::mutex_;
 
 namespace{
+    // Ref: https://github.com/Livox-SDK/livox_ros_driver/blob/880c46a91aaa602dbecf20e204da4751747b3826/livox_ros_driver/livox_ros_driver/lds.h#L238
     // Seems that once PointDataType is known, point number per package is fixed,
     // thus we can pre-compute the package size
     // Map point type to package size in byte
