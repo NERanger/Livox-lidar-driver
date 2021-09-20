@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "livox/LidarDataSrc.hpp"
+#include "livox/utils/utils.hpp"
 
 using std::cout;
 using std::cerr;
@@ -12,12 +13,13 @@ using std::string;
 using livox::LidarDataSrc;
 
 std::unique_ptr<LidarDataSrc> LidarDataSrc::instance_ptr_;
-std::mutex LidarDataSrc::mutex_;
+std::mutex LidarDataSrc::instance_mutex_;
 
 namespace{
     // Ref: https://github.com/Livox-SDK/livox_ros_driver/blob/880c46a91aaa602dbecf20e204da4751747b3826/livox_ros_driver/livox_ros_driver/lds.h#L238
     // Seems that once PointDataType is known, point number per package is fixed,
     // thus we can pre-compute the package size
+
     // Map point type to package size in byte
     const std::unordered_map<uint8_t, uint32_t> kPtypeToPkgSizeMap{
         {kCartesian, 1318},
@@ -42,7 +44,7 @@ LidarDataSrc::~LidarDataSrc(){
 }
 
 LidarDataSrc& LidarDataSrc::GetInstance(){
-    std::lock_guard<std::mutex> lk(mutex_);
+    std::lock_guard<std::mutex> lk(instance_mutex_);
 
     if(!instance_ptr_){
         instance_ptr_.reset(new LidarDataSrc);
@@ -142,7 +144,10 @@ void LidarDataSrc::GetLidarDataCb(uint8_t handle, LivoxEthPacket *data, uint32_t
     // Unit: second
     duration<double> time_elapse = duration_cast<duration<double>>(high_resolution_clock::now() - last_frame_end);
     if(time_elapse.count() > instance_ptr_->intgrate_time_){
-        std::swap(instance_ptr_->prepare_data_q_, instance_ptr_->ready_data_q_);
+        {
+            std::lock_guard<std::mutex> lk(instance_ptr_->dbuf_mutex_);
+            std::swap(instance_ptr_->prepare_data_q_, instance_ptr_->ready_data_q_);
+        }
 
         // Empty the queue for data preparing
         if(!instance_ptr_->prepare_data_q_.empty()){
@@ -396,10 +401,10 @@ void LidarDataSrc::DeviceInformationCb(livox_status status, uint8_t handle,
     }
 
     if(ack){
-        cout << "Firmware version: " << ack->firmware_version[0] << "."
-                                     << ack->firmware_version[1] << "."
-                                     << ack->firmware_version[2] << "."
-                                     << ack->firmware_version[3] << endl; 
+        cout << "Firmware version: " << (unsigned)ack->firmware_version[0] << "."
+                                     << (unsigned)ack->firmware_version[1] << "."
+                                     << (unsigned)ack->firmware_version[2] << "."
+                                     << (unsigned)ack->firmware_version[3] << endl; 
     }
 }
 
@@ -430,4 +435,43 @@ bool LidarDataSrc::QueryWhiteList(const std::string &bc_code) const{
     }
 
     return false;
+}
+
+std::vector<livox::PointXYZR> LidarDataSrc::GetPtdataXYZR(){ 
+    std::queue<RawDataPkg> raw_queue;
+    {// Copy data to local variable
+        std::lock_guard<std::mutex> lk(dbuf_mutex_);
+        raw_queue = ready_data_q_;
+    }
+
+    std::vector<livox::PointXYZR> out;
+    while(!raw_queue.empty()){
+        RawDataPkg p = raw_queue.front();
+        LivoxEthPacket *raw_pkg = reinterpret_cast<LivoxEthPacket *>(p.raw_data);
+        uint64_t timestamp = *reinterpret_cast<uint64_t *>(raw_pkg->timestamp);
+        LivoxExtendRawPointToPointXYZR(out, raw_pkg->data, p.pt_num, timestamp);
+
+        raw_queue.pop();
+    }
+
+    return out;
+}
+
+void LidarDataSrc::LivoxExtendRawPointToPointXYZR(std::vector<PointXYZR> &out, uint8_t *pt_data, uint32_t pt_num, uint64_t timestamp) const{
+    using livox::utils::IsVec3Zero;
+
+    LivoxExtendRawPoint *raw_pts = reinterpret_cast<LivoxExtendRawPoint *>(pt_data);
+    for(size_t i = 0; i < pt_num; ++i){
+        // Check if zero
+        if(IsVec3Zero(raw_pts[i].x, raw_pts[i].y, raw_pts[i].z)){
+            continue;
+        }
+
+        // Convert from mm to m
+        out.emplace_back(PointXYZR{raw_pts[i].x / 1000.0f, 
+                                   raw_pts[i].y / 1000.0f, 
+                                   raw_pts[i].z / 1000.0f, 
+                                   (float)raw_pts[i].reflectivity});
+    }
+
 }

@@ -57,6 +57,14 @@ struct LidarDevice{
     UserConfig config;
 };
 
+struct PointXYZR{
+    float x;            // X axis, Unit:m
+    float y;            // Y axis, Unit:m
+    float z;            // Z axis, Unit:m
+    float reflectivity; // Reflectivity
+    uint64_t timestamp; // Nano seconds
+};
+
 // Thread-safe singleton
 class LidarDataSrc{
 public:
@@ -68,7 +76,7 @@ public:
 
     bool Initialize(const std::vector<std::string> &broadcast_codes);
 
-    // void GetPtdataBlocking();
+    std::vector<PointXYZR> GetPtdataXYZR();
 
     static LidarDataSrc& GetInstance();
 
@@ -76,7 +84,7 @@ private:
 
     LidarDataSrc() = default;
 
-    // inline bool IsAutoConnet() const{return auto_connect_;}
+    void LivoxExtendRawPointToPointXYZR(std::vector<PointXYZR> &out, uint8_t *pt_data, uint32_t pt_num, uint64_t timestamp) const;
 
     bool AddBroadcastCodeToWhitelist(const std::string &bc_code);
     bool QueryWhiteList(const char* bc_code) const;
@@ -101,6 +109,7 @@ private:
     // Double buffering
     std::queue<RawDataPkg> prepare_data_q_;
     std::queue<RawDataPkg> ready_data_q_;
+    std::mutex dbuf_mutex_;
 
     double intgrate_time_ = 0.1;  // Uint: second
 
@@ -109,7 +118,7 @@ private:
     volatile bool is_initialized_ = false;
 
     static std::unique_ptr<LidarDataSrc> instance_ptr_;
-    static std::mutex mutex_;
+    static std::mutex instance_mutex_;
 };
 
 }
