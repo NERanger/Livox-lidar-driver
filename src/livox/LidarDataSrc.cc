@@ -1,4 +1,6 @@
 #include <iostream>
+#include <unordered_map>
+#include <cstring>
 
 #include "livox/LidarDataSrc.hpp"
 
@@ -11,6 +13,23 @@ using livox::LidarDataSrc;
 
 std::unique_ptr<LidarDataSrc> LidarDataSrc::instance_ptr_;
 std::mutex LidarDataSrc::mutex_;
+
+namespace{
+    // Seems that once PointDataType is known, point number per package is fixed,
+    // thus we can pre-compute the package size
+    // Map point type to package size in byte
+    const std::unordered_map<uint8_t, uint32_t> kPtypeToPkgSizeMap{
+        {kCartesian, 1318},
+        {kSpherical, 918},
+        {kExtendCartesian, 1362},
+        {kExtendSpherical, 978},
+        {kDualExtendCartesian, 1362},
+        {kDualExtendSpherical, 786},
+        {kImu, 42},
+        {kTripleExtendCartesian, 1278},
+        {kTripleExtendSpherical, 678}
+    };
+}
 
 LidarDataSrc::~LidarDataSrc(){
     if(is_initialized_){
@@ -102,17 +121,46 @@ bool LidarDataSrc::AddBroadcastCodeToWhitelist(const std::string &bc_code){
 }
 
 void LidarDataSrc::GetLidarDataCb(uint8_t handle, LivoxEthPacket *data, uint32_t data_num, void *client_data){
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration;
+    using std::chrono::duration_cast;
+
+    static bool first_enter = true;
+    static high_resolution_clock::time_point last_frame_end;
+
     // clinet_data is not used
     if(!data || !data_num || (handle >= kMaxLidarCount)){
         return;
     }
 
-    if(data){
-        instance_ptr_->data_recv_cnt_[handle] += 1;  // handle is expected in [0,kMaxLidarCount)
-        if(instance_ptr_->data_recv_cnt_[handle] % 100 == 0){
-            cout << "Recv pkg count: " << handle << " " << instance_ptr_->data_recv_cnt_[handle] << endl;
-        }
+    if(first_enter){
+        last_frame_end = high_resolution_clock::now();
+        first_enter = false;
     }
+
+    // Unit: second
+    duration<double> time_elapse = duration_cast<duration<double>>(high_resolution_clock::now() - last_frame_end);
+    if(time_elapse.count() > instance_ptr_->intgrate_time_){
+        std::swap(instance_ptr_->prepare_data_q_, instance_ptr_->ready_data_q_);
+
+        // Empty the queue for data preparing
+        if(!instance_ptr_->prepare_data_q_.empty()){
+            std::queue<RawDataPkg> empty_q;
+            std::swap(instance_ptr_->prepare_data_q_, empty_q);
+        }
+
+        last_frame_end = high_resolution_clock::now();
+
+        // cout << "Double buffer swapped, new time: " << last_frame_end.time_since_epoch().count() << endl;
+    }
+    
+    RawDataPkg pkg;
+    pkg.pt_num = data_num;
+    std::memcpy(pkg.raw_data, (uint8_t *)data, kPtypeToPkgSizeMap.find(data->data_type)->second);
+
+    // cout << "Data number: " << data_num << " expected size: " << kPtypeToPkgSizeMap.find((PointDataType)data->data_type)->second << endl;
+
+    instance_ptr_->prepare_data_q_.push(pkg);
 }
 
 void LidarDataSrc::OnDeviceBroadcast(const BroadcastDeviceInfo * const info){

@@ -5,11 +5,17 @@
 #include <vector>
 #include <string>
 #include <array>
+#include <queue>
+#include <chrono>
 
 #include <livox_sdk.h>
 #include <livox_def.h>
 
+// #include "livox/Common.hpp"
+
 namespace livox{
+
+const uint32_t KEthPacketMaxLength = 1500;
 
 enum LidarConnectState{
     kConnectStateOff = 0,
@@ -28,6 +34,11 @@ enum LidarConfigCodeBit{
     kConfigReturnMode = 2,
     kConfigCoordinate = 4,
     kConfigImuRate = 8
+};
+
+struct RawDataPkg{
+    uint32_t pt_num;
+    uint8_t raw_data[KEthPacketMaxLength];
 };
 
 struct UserConfig{
@@ -57,6 +68,8 @@ public:
 
     bool Initialize(const std::vector<std::string> &broadcast_codes);
 
+    // void GetPtdataBlocking();
+
     static LidarDataSrc& GetInstance();
 
 private:
@@ -84,6 +97,12 @@ private:
     std::vector<std::string> white_list_;
     std::array<LidarDevice, kMaxLidarCount> lidars_;
     std::array<uint32_t, kMaxLidarCount> data_recv_cnt_;
+
+    // Double buffering
+    std::queue<RawDataPkg> prepare_data_q_;
+    std::queue<RawDataPkg> ready_data_q_;
+
+    double intgrate_time_ = 0.1;  // Uint: second
 
     bool auto_connect_ = false;
 
