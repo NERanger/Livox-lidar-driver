@@ -6,10 +6,14 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS "-std=c++17 -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE  "-std=c++17 -O3")
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+
 find_package(Threads REQUIRED)
+find_package(LivoxSDK REQUIRED) # LivoxSDK_INCLUDE_DIR and LivoxSDK_LIBRARY
 
 include_directories(
-    src/
+    ${LivoxSDK_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/src/
 )
 
 add_subdirectory(src)

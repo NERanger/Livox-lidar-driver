@@ -5,5 +5,5 @@ add_library(
 )
 target_link_libraries(
     livox_driver 
-        /usr/local/lib/liblivox_sdk_static.a
+        ${LivoxSDK_LIBRARY}
 )
