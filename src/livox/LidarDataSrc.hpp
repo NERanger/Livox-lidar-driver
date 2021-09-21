@@ -72,6 +72,9 @@ public:
 
     ~LidarDataSrc();
 
+    inline void SetIntegrateTime(double seconds){intgrate_time_ = seconds;}
+    inline double IntegrateTime() const {return intgrate_time_;}
+
     bool Initialize(const std::vector<std::string> &broadcast_codes);
     bool Initialize();
 
