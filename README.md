@@ -6,6 +6,10 @@ Currently Livox only provides a official grab-to-go driver with ROS. And the [cp
 
 This repo provides a simple cpp sample based on Livox-SDK that can let user get point data conveniently.
 
+![](https://github.com/NERanger/Livox-lidar-driver/blob/main/docs/data_visualization.png)
+
+*Point cloud from Livox AVIA with a integration time of 0.5 seconds*
+
 ## Prerequisites
 
 * [Livox-SDK](https://github.com/Livox-SDK/Livox-SDK)
