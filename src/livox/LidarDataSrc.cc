@@ -464,6 +464,7 @@ std::vector<livox::PointXYZR> LidarDataSrc::GetPtdataXYZR(){
 
 void LidarDataSrc::LivoxExtendRawPointToPointXYZR(std::vector<PointXYZR> &out, uint8_t *pt_data, uint32_t pt_num, uint64_t timestamp) const{
     using livox::utils::IsVec3Zero;
+    using livox::utils::IsVec3fInBound;
 
     LivoxExtendRawPoint *raw_pts = reinterpret_cast<LivoxExtendRawPoint *>(pt_data);
     for(size_t i = 0; i < pt_num; ++i){
@@ -473,10 +474,17 @@ void LidarDataSrc::LivoxExtendRawPointToPointXYZR(std::vector<PointXYZR> &out, u
         }
 
         // Convert from mm to m
-        out.emplace_back(PointXYZR{raw_pts[i].x / 1000.0f, 
-                                   raw_pts[i].y / 1000.0f, 
-                                   raw_pts[i].z / 1000.0f, 
-                                   (float)raw_pts[i].reflectivity});
+        PointXYZR pt{raw_pts[i].x / 1000.0f, 
+                     raw_pts[i].y / 1000.0f, 
+                     raw_pts[i].z / 1000.0f, 
+                     (float)raw_pts[i].reflectivity};
+        
+        // Check if exceed upper bound
+        if(!IsVec3fInBound(pt.x, pt.y, pt.z, 450.0f)){
+            continue;
+        }
+
+        out.emplace_back(pt);
     }
 
 }
