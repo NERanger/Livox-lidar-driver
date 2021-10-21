@@ -87,3 +87,8 @@ Livox LiDAR will continuously scan and return data. Integration Time is the desi
 ### Double Buffer
 
 There are 2 buffers called `prepare_data_q_` and `ready_data_q_` respectively. Every time the sdk receives data, the data will be stored in `prepare_data_q_`. Every time the integration time is reached, the frame is considered as complete and the content of `prepare_data_q_` and `ready_data_q_` will be swapped. And when you call `GetPtdataXYZR()`, the data is parsed from `ready_data_q_`.
+
+## TODO
+
+* Estimate timestamp for every point
+* Bug fixing: current imu data is blended in lidar point data
